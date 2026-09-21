@@ -1,0 +1,123 @@
+// Prisma schema for the account-store template.
+// Points at the same Postgres database Supabase provisions.
+// Use Prisma for typed app-layer queries; Supabase Auth still owns
+// auth.users — we mirror the bits we need into `profiles`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum OrderStatus {
+  pending // created, awaiting payment
+  paid // payment confirmed, awaiting fulfillment
+  fulfilled // credentials delivered to buyer
+  refunded
+  cancelled
+}
+
+enum ListingStatus {
+  draft
+  active
+  archived
+}
+
+/// Mirrors auth.users (id matches Supabase auth user id).
+/// Keep this table thin — Supabase Auth is the source of truth for
+/// credentials; this just gives us a place to join app data.
+model Profile {
+  id        String   @id @db.Uuid
+  email     String   @unique
+  role      String   @default("customer") // "customer" | "admin"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  orders Order[]
+
+  @@map("profiles")
+}
+
+model Category {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  listings  Listing[]
+
+  @@map("categories")
+}
+
+/// A product listing. `deliveryNotes` describes what the buyer gets;
+/// actual secret credentials never live here — see FulfillmentAsset.
+model Listing {
+  id            String        @id @default(uuid()) @db.Uuid
+  title         String
+  slug          String        @unique
+  description   String
+  priceCents    Int
+  currency      String        @default("USD")
+  status        ListingStatus @default(draft)
+  categoryId    String?       @db.Uuid
+  category      Category?     @relation(fields: [categoryId], references: [id])
+  imageUrl      String?
+  stockCount    Int           @default(0) // informational; manual fulfillment doesn't decrement automatically
+  deliveryNotes String? // e.g. "Delivered within 24h after manual review"
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  orderItems OrderItem[]
+
+  @@map("listings")
+}
+
+/// One purchase. A single checkout can contain multiple OrderItems.
+model Order {
+  id              String      @id @default(uuid()) @db.Uuid
+  buyerId         String      @db.Uuid
+  buyer           Profile     @relation(fields: [buyerId], references: [id])
+  status          OrderStatus @default(pending)
+  totalCents      Int
+  currency        String      @default("USD")
+  paymentProvider String? // "stripe" | "paddle" | null until wired up
+  paymentRef      String? // provider's payment/session id
+  buyerNote       String? // optional note from buyer at checkout
+  createdAt       DateTime    @default(now()) @map("created_at")
+  fulfilledAt     DateTime?   @map("fulfilled_at")
+  fulfilledBy     String?     @db.Uuid // admin profile id
+
+  items       OrderItem[]
+  fulfillment FulfillmentAsset[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  orderId     String  @db.Uuid
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  listingId   String  @db.Uuid
+  listing     Listing @relation(fields: [listingId], references: [id])
+  quantity    Int     @default(1)
+  unitPriceCents Int  // snapshot of price at purchase time
+
+  @@map("order_items")
+}
+
+/// Delivered credentials/instructions for a fulfilled order. Kept in a
+/// separate table so it can carry its own tighter RLS policy (only the
+/// buyer + admins can ever select from it) and so listings never hold
+/// live secrets.
+model FulfillmentAsset {
+  id        String   @id @default(uuid()) @db.Uuid
+  orderId   String   @db.Uuid
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  label     String // e.g. "Login credentials", "Redeem instructions"
+  content   String // encrypt at rest in production (see README)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("fulfillment_assets")
+}
