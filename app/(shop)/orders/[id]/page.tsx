@@ -52,7 +52,6 @@ export default async function OrderDetailPage({
             <CardTitle>Items</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {/* @ts-expect-error - joined shape from supabase-js */}
             {order.order_items?.map((item) => (
               <div key={item.id} className="flex justify-between text-sm">
                 <span>

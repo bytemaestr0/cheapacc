@@ -3,7 +3,9 @@
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { OrderStatus } from "@/types/database";
+import type { Enums } from "@/types/database";
+
+type OrderStatus = Enums<"order_status">;
 
 const STEPS: { key: OrderStatus; label: string }[] = [
   { key: "pending", label: "Order placed" },
