@@ -1,110 +1,387 @@
-// Hand-authored minimal types so the template compiles out of the box.
-// Once your Supabase project exists, replace this file with the real
-// generated types:
-//   npx supabase gen types typescript --project-id <id> > types/database.ts
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
-export type OrderStatus = "pending" | "paid" | "fulfilled" | "refunded" | "cancelled";
-export type ListingStatus = "draft" | "active" | "archived";
-
-export interface Database {
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   public: {
     Tables: {
-      profiles: {
-        Row: {
-          id: string;
-          email: string;
-          username: string | null;
-          role: string;
-          created_at: string;
-        };
-        Insert: Partial<Database["public"]["Tables"]["profiles"]["Row"]> & {
-          id: string;
-          email: string;
-        };
-        Update: Partial<Database["public"]["Tables"]["profiles"]["Row"]>;
-      };
       categories: {
-        Row: { id: string; name: string; slug: string; created_at: string };
-        Insert: Partial<Database["public"]["Tables"]["categories"]["Row"]> & {
-          name: string;
-          slug: string;
-        };
-        Update: Partial<Database["public"]["Tables"]["categories"]["Row"]>;
-      };
-      listings: {
         Row: {
-          id: string;
-          title: string;
-          slug: string;
-          description: string;
-          price_cents: number;
-          currency: string;
-          status: ListingStatus;
-          category_id: string | null;
-          image_url: string | null;
-          stock_count: number;
-          delivery_notes: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: Partial<Database["public"]["Tables"]["listings"]["Row"]> & {
-          title: string;
-          slug: string;
-          description: string;
-          price_cents: number;
-        };
-        Update: Partial<Database["public"]["Tables"]["listings"]["Row"]>;
-      };
-      orders: {
-        Row: {
-          id: string;
-          buyer_id: string;
-          status: OrderStatus;
-          total_cents: number;
-          currency: string;
-          payment_provider: string | null;
-          payment_ref: string | null;
-          buyer_note: string | null;
-          created_at: string;
-          fulfilled_at: string | null;
-          fulfilled_by: string | null;
-        };
-        Insert: Partial<Database["public"]["Tables"]["orders"]["Row"]> & {
-          buyer_id: string;
-          total_cents: number;
-        };
-        Update: Partial<Database["public"]["Tables"]["orders"]["Row"]>;
-      };
-      order_items: {
-        Row: {
-          id: string;
-          order_id: string;
-          listing_id: string;
-          quantity: number;
-          unit_price_cents: number;
-        };
-        Insert: Partial<Database["public"]["Tables"]["order_items"]["Row"]> & {
-          order_id: string;
-          listing_id: string;
-          unit_price_cents: number;
-        };
-        Update: Partial<Database["public"]["Tables"]["order_items"]["Row"]>;
-      };
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       fulfillment_assets: {
         Row: {
-          id: string;
-          order_id: string;
-          label: string;
-          content: string;
-          created_at: string;
-        };
-        Insert: Partial<Database["public"]["Tables"]["fulfillment_assets"]["Row"]> & {
-          order_id: string;
-          label: string;
-          content: string;
-        };
-        Update: Partial<Database["public"]["Tables"]["fulfillment_assets"]["Row"]>;
-      };
-    };
-  };
+          content: string
+          created_at: string
+          id: string
+          label: string
+          order_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          label: string
+          order_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          label?: string
+          order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fulfillment_assets_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listings: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          currency: string
+          delivery_notes: string | null
+          description: string
+          id: string
+          image_url: string | null
+          price_cents: number
+          slug: string
+          status: Database["public"]["Enums"]["listing_status"]
+          stock_count: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          currency?: string
+          delivery_notes?: string | null
+          description: string
+          id?: string
+          image_url?: string | null
+          price_cents: number
+          slug: string
+          status?: Database["public"]["Enums"]["listing_status"]
+          stock_count?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          currency?: string
+          delivery_notes?: string | null
+          description?: string
+          id?: string
+          image_url?: string | null
+          price_cents?: number
+          slug?: string
+          status?: Database["public"]["Enums"]["listing_status"]
+          stock_count?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listings_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          id: string
+          listing_id: string
+          order_id: string
+          quantity: number
+          unit_price_cents: number
+        }
+        Insert: {
+          id?: string
+          listing_id: string
+          order_id: string
+          quantity?: number
+          unit_price_cents: number
+        }
+        Update: {
+          id?: string
+          listing_id?: string
+          order_id?: string
+          quantity?: number
+          unit_price_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          buyer_id: string
+          buyer_note: string | null
+          created_at: string
+          currency: string
+          fulfilled_at: string | null
+          fulfilled_by: string | null
+          id: string
+          payment_provider: string | null
+          payment_ref: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          total_cents: number
+        }
+        Insert: {
+          buyer_id: string
+          buyer_note?: string | null
+          created_at?: string
+          currency?: string
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
+          id?: string
+          payment_provider?: string | null
+          payment_ref?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total_cents: number
+        }
+        Update: {
+          buyer_id?: string
+          buyer_note?: string | null
+          created_at?: string
+          currency?: string
+          fulfilled_at?: string | null
+          fulfilled_by?: string | null
+          id?: string
+          payment_provider?: string | null
+          payment_ref?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_fulfilled_by_fkey"
+            columns: ["fulfilled_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          role: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          role?: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          role?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      is_admin: { Args: never; Returns: boolean }
+    }
+    Enums: {
+      listing_status: "draft" | "active" | "archived"
+      order_status: "pending" | "paid" | "fulfilled" | "refunded" | "cancelled"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      listing_status: ["draft", "active", "archived"],
+      order_status: ["pending", "paid", "fulfilled", "refunded", "cancelled"],
+    },
+  },
+} as const
