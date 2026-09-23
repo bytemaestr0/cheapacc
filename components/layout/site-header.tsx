@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, User } from "lucide-react";
+import { ShoppingCart, User, Receipt } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/components/shop/cart-provider";
@@ -30,8 +30,13 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" asChild>
-            <Link href="/account/orders" aria-label="Account">
+            <Link href="/account" aria-label="Account">
               <User />
+            </Link>
+          </Button>
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/account/orders" aria-label="Order history">
+              <Receipt />
             </Link>
           </Button>
           <Button variant="ghost" size="icon" asChild className="relative">

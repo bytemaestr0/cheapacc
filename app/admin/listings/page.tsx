@@ -1,20 +1,21 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CategoryBadge } from "@/components/shop/category-badge";
 import { formatPrice } from "@/lib/utils";
 
 export const metadata = { title: "Admin — Listings" };
 
 export default async function AdminListingsPage() {
-  const supabase = await createClient();
+  const { supabase } = await requireAdmin();
   const { data: listings } = await supabase
     .from("listings")
-    .select("*")
+    .select("id, title, price_cents, currency, stock_count, status, categories(slug)")
     .order("created_at", { ascending: false });
 
   return (
-    <div className="container max-w-4xl py-12">
+    <div>
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Listings</h1>
@@ -30,6 +31,7 @@ export default async function AdminListingsPage() {
           <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
             <tr>
               <th className="px-4 py-3">Title</th>
+              <th className="px-4 py-3">Category</th>
               <th className="px-4 py-3">Price</th>
               <th className="px-4 py-3">Stock</th>
               <th className="px-4 py-3">Status</th>
@@ -37,9 +39,12 @@ export default async function AdminListingsPage() {
             </tr>
           </thead>
           <tbody>
-            {(listings ?? []).map((listing) => (
+            {(listings ?? []).map((listing: any) => (
               <tr key={listing.id} className="border-t border-border">
                 <td className="px-4 py-3 font-medium">{listing.title}</td>
+                <td className="px-4 py-3">
+                  <CategoryBadge slug={listing.categories?.slug} />
+                </td>
                 <td className="px-4 py-3">{formatPrice(listing.price_cents, listing.currency)}</td>
                 <td className="px-4 py-3">{listing.stock_count}</td>
                 <td className="px-4 py-3">

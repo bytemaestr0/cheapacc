@@ -6,12 +6,15 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CategoryBadge } from "@/components/shop/category-badge";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/components/shop/cart-provider";
 import { toast } from "sonner";
 import type { Database } from "@/types/database";
 
-type Listing = Database["public"]["Tables"]["listings"]["Row"];
+type Listing = Database["public"]["Tables"]["listings"]["Row"] & {
+  categories?: { slug: string } | null;
+};
 
 export function ListingCard({ listing }: { listing: Listing }) {
   const { addItem } = useCart();
@@ -34,8 +37,9 @@ export function ListingCard({ listing }: { listing: Listing }) {
                 No image
               </div>
             )}
+            <CategoryBadge slug={listing.categories?.slug} className="absolute left-3 top-3" />
             {listing.stock_count <= 0 && (
-              <Badge variant="secondary" className="absolute left-3 top-3">
+              <Badge variant="secondary" className="absolute right-3 top-3">
                 Out of stock
               </Badge>
             )}

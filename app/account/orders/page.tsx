@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatPrice } from "@/lib/utils";
@@ -14,12 +15,19 @@ export default async function AccountOrdersPage() {
 
   const { data: orders } = await supabase
     .from("orders")
-    .select("*")
+    .select("id, status, total_cents, currency, created_at")
     .eq("buyer_id", user?.id ?? "")
     .order("created_at", { ascending: false });
 
   return (
     <div className="container max-w-2xl py-12">
+      <Link
+        href="/account"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Account
+      </Link>
       <h1 className="mb-8 text-2xl font-semibold tracking-tight">Your orders</h1>
 
       {(!orders || orders.length === 0) && (

@@ -13,11 +13,28 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { CATEGORIES, DEFAULT_CATEGORY_SLUG } from "@/lib/categories";
 import type { Database } from "@/types/database";
 
 type Listing = Database["public"]["Tables"]["listings"]["Row"];
 
-export function ListingForm({ listing }: { listing?: Listing }) {
+/** id + slug pairs for rows currently in the `categories` table. */
+export interface CategoryOption {
+  id: string;
+  slug: string;
+}
+
+export function ListingForm({
+  listing,
+  categoryOptions,
+  initialCategorySlug,
+}: {
+  listing?: Listing;
+  /** Rows from the `categories` table — used to resolve slug -> id on submit. */
+  categoryOptions: CategoryOption[];
+  /** Slug of listing's current category, if editing an existing listing. */
+  initialCategorySlug?: string;
+}) {
   const router = useRouter();
   const [title, setTitle] = useState(listing?.title ?? "");
   const [slug, setSlug] = useState(listing?.slug ?? "");
@@ -28,12 +45,54 @@ export function ListingForm({ listing }: { listing?: Listing }) {
   const [stockCount, setStockCount] = useState(listing?.stock_count?.toString() ?? "0");
   const [status, setStatus] = useState(listing?.status ?? "draft");
   const [imageUrl, setImageUrl] = useState(listing?.image_url ?? "");
+  const [uploading, setUploading] = useState(false);
   const [deliveryNotes, setDeliveryNotes] = useState(listing?.delivery_notes ?? "");
+  const [categorySlug, setCategorySlug] = useState(
+    initialCategorySlug ?? DEFAULT_CATEGORY_SLUG
+  );
   const [loading, setLoading] = useState(false);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/admin/listings/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        toast.error(body.error ?? "Upload failed");
+        return;
+      }
+
+      const body = await res.json();
+      setImageUrl(body.url);
+      toast.success("Photo uploaded");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+
+    const matchedCategory = categoryOptions.find((c) => c.slug === categorySlug);
+    if (!matchedCategory) {
+      toast.error(
+        "Category list isn't set up in the database yet — run prisma/seed.ts or insert rows into `categories` matching lib/categories.ts."
+      );
+      setLoading(false);
+      return;
+    }
 
     const payload = {
       title,
@@ -44,6 +103,7 @@ export function ListingForm({ listing }: { listing?: Listing }) {
       status,
       image_url: imageUrl || null,
       delivery_notes: deliveryNotes || null,
+      category_id: matchedCategory.id,
     };
 
     const res = await fetch(
@@ -92,6 +152,32 @@ export function ListingForm({ listing }: { listing?: Listing }) {
         />
       </div>
 
+      <div className="space-y-1.5">
+        <Label>Category</Label>
+        <Select value={categorySlug} onValueChange={setCategorySlug}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CATEGORIES.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <SelectItem key={cat.slug} value={cat.slug}>
+                  <span className="inline-flex items-center gap-2">
+                    <Icon className={`h-3.5 w-3.5 ${cat.colorClass}`} />
+                    {cat.label}
+                  </span>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          Defaults to &quot;Other&quot; — pick the platform/game this listing belongs to so it
+          shows up in the right section on the browse page.
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="price">Price (USD)</Label>
@@ -132,12 +218,39 @@ export function ListingForm({ listing }: { listing?: Listing }) {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="imageUrl">Image URL</Label>
+        <Label htmlFor="imageUpload">Listing photo</Label>
+        <div className="flex items-center gap-4">
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl}
+              alt=""
+              className="h-20 w-20 rounded-md border border-border object-cover"
+            />
+          ) : (
+            <div className="flex h-20 w-20 items-center justify-center rounded-md border border-dashed border-border text-xs text-muted-foreground">
+              No photo
+            </div>
+          )}
+          <div className="flex-1 space-y-2">
+            <Input
+              id="imageUpload"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={handleFileChange}
+              disabled={uploading}
+            />
+            <p className="text-xs text-muted-foreground">
+              {uploading ? "Uploading..." : "JPEG, PNG, WebP, or GIF — up to 5MB."}
+            </p>
+          </div>
+        </div>
         <Input
           id="imageUrl"
           value={imageUrl}
           onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="https://..."
+          placeholder="Or paste an image URL directly"
+          className="mt-2"
         />
       </div>
 
@@ -153,7 +266,7 @@ export function ListingForm({ listing }: { listing?: Listing }) {
         />
       </div>
 
-      <Button type="submit" disabled={loading}>
+      <Button type="submit" disabled={loading || uploading}>
         {loading ? "Saving..." : listing ? "Save changes" : "Create listing"}
       </Button>
     </form>

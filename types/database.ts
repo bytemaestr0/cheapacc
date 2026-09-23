@@ -13,6 +13,7 @@ export interface Database {
         Row: {
           id: string;
           email: string;
+          username: string | null;
           role: string;
           created_at: string;
         };

@@ -11,6 +11,7 @@ const bodySchema = z.object({
   status: z.enum(["draft", "active", "archived"]).optional(),
   image_url: z.string().url().nullable().optional(),
   delivery_notes: z.string().nullable().optional(),
+  category_id: z.string().uuid().nullable().optional(),
 });
 
 export async function PATCH(

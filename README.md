@@ -28,10 +28,17 @@ npm install
 ## 2. Create a Supabase project
 
 1. Go to [supabase.com](https://supabase.com) → New project.
-2. In **Project Settings → API**, copy the URL, `anon` key, and
-   `service_role` key.
-3. In **Project Settings → Database**, copy the pooled connection string
-   (port 6543) and the direct connection string (port 5432).
+2. Click **Connect** at the top of the project page (there's no separate
+   "Database" tab in Project Settings anymore — connection info and API
+   keys both live behind this one dialog now).
+3. On the **App Frameworks** / **API Keys** tab, copy the project URL, the
+   **publishable** key (`sb_publishable_...`), and the **secret** key
+   (`sb_secret_...`). These replace the old `anon` and `service_role` JWT
+   keys — Supabase is deprecating those by the end of 2026, so this
+   template uses the new keys directly rather than the legacy ones.
+4. On the **ORMs** tab, pick **Prisma** and copy the connection strings it
+   gives you: the pooled one (port 6543, for `DATABASE_URL`) and the
+   direct one (port 5432, for `DIRECT_URL`).
 
 Copy `.env.example` to `.env` and fill these in:
 
@@ -41,21 +48,34 @@ cp .env.example .env
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=      # server-only, keep secret
-DATABASE_URL=                   # pooled (6543), used at runtime by Prisma
-DIRECT_URL=                     # direct (5432), used for migrations
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=   # sb_publishable_..., safe in the browser
+SUPABASE_SECRET_KEY=                    # sb_secret_..., server-only, keep secret
+DATABASE_URL=                           # pooled (6543), used at runtime by Prisma
+DIRECT_URL=                             # direct (5432), used for migrations
 ```
+
+> If your project is old enough to still show `anon` / `service_role`
+> keys, you can generate publishable/secret keys for it from
+> **Settings → API Keys → Publishable and secret API keys**. Both key
+> types work side by side, so nothing breaks while you switch over.
 
 ## 3. Set up the database
 
 You have two equally valid options — pick one:
 
 **Option A — SQL migration (fastest to get running):**
-Open the Supabase SQL editor and run the contents of
-`supabase/migrations/0001_init.sql`. This creates all tables, the
-`handle_new_user` trigger (auto-creates a `profiles` row on signup), and all
-Row Level Security policies.
+Open the Supabase SQL editor and run, in order:
+1. `supabase/migrations/0001_init.sql` — creates all tables, the
+   `handle_new_user` trigger (auto-creates a `profiles` row on signup), and
+   all Row Level Security policies.
+2. `supabase/migrations/0002_seed_categories.sql` — inserts the fixed
+   category set (Steam, Valorant, CS:GO, Minecraft, Fortnite, Other) that
+   the listing form and browse page expect. Without this, the category
+   dropdown on `/admin/listings/new` has nothing to select.
+3. `supabase/migrations/0003_add_username.sql` — adds a nullable, unique
+   `username` column to `profiles` for the account settings page
+   (`/account`). Existing users just have `username = null` until they set
+   one.
 
 **Option B — Prisma migrate:**
 ```bash
@@ -65,7 +85,9 @@ Note: Prisma won't create the `handle_new_user` trigger or RLS policies
 (those are Postgres/Supabase-specific, not part of Prisma's schema
 language), so you'd still need to run the trigger + policy sections of
 `0001_init.sql` by hand afterward. If you're not sure which to pick, use
-Option A.
+Option A. Either way, `npm run db:seed` (step 5 below) inserts the same
+category rows via Prisma, so you don't need to also run
+`0002_seed_categories.sql` if you're seeding that way.
 
 Either way, generate the Prisma client so `lib/prisma.ts` works:
 ```bash
@@ -88,8 +110,11 @@ npx prisma generate
 ```bash
 npm run db:seed
 ```
-Adds one example category and one active listing so `/` and `/listings`
-aren't empty on first run.
+Inserts the fixed category set (see step 3) plus two example listings —
+one filed under Steam, one under Other — so `/`, `/listings`, and the
+admin category dropdown aren't empty on first run. Safe to run even if
+you already ran `0002_seed_categories.sql` in the SQL editor; both use
+upserts keyed on slug.
 
 ## 6. Run it
 
@@ -97,6 +122,49 @@ aren't empty on first run.
 npm run dev
 ```
 Visit `http://localhost:3000`.
+
+## Categories
+
+The storefront uses a fixed category list (Steam, Valorant, CS:GO,
+Minecraft, Fortnite, Other) rather than letting admins create arbitrary
+categories. This keeps the browse page's grouped sections and icons
+predictable. The list lives in one place: `lib/categories.ts`.
+
+- **Icons are generic `lucide-react` glyphs, not brand logos** — game/platform
+  names and logos are trademarks of their respective owners, so no Steam,
+  Riot, Valve, Mojang, or Epic artwork is reproduced here.
+- The listing form (`/admin/listings/new` and `/admin/listings/[id]`)
+  shows a category dropdown that defaults to **Other**. Selecting a
+  category resolves it to the matching row's `id` in the `categories`
+  table before submitting.
+- The browse page (`/listings`) groups active listings into sections by
+  category, in the order defined in `lib/categories.ts`, and skips empty
+  sections. Filter pills at the top link to `/listings?category=<slug>`
+  for a single-category view.
+- **To add a category:** add an entry to the `CATEGORIES` array in
+  `lib/categories.ts` (slug, label, a `lucide-react` icon, a color class),
+  then insert a matching row into the `categories` table with the same
+  slug (either via SQL or by adding it to `prisma/seed.ts`). The slug is
+  the link between the two — if they don't match, the new category won't
+  render an icon/label (it'll fall back to "Other" styling) even though
+  the underlying data is fine.
+
+## Account settings
+
+The header's profile icon links to `/account` — a settings page, not
+straight to order history. From there a signed-in user can:
+
+- Set or change a **username** (optional, unique if set — enforced by a
+  partial unique index so multiple users can each leave it blank).
+- Change their **password** via `supabase.auth.updateUser()`.
+- Sign out.
+- Jump to **order history** at `/account/orders` (unchanged, just no
+  longer the icon's default destination).
+
+There's intentionally no avatar/profile picture upload — keeping this
+template's auth surface small and avoiding file storage/moderation
+concerns that come with user-uploaded images. If you want one later,
+Supabase Storage with a private bucket + signed URLs is the usual path.
 
 ## How the fulfillment flow works
 
@@ -147,11 +215,14 @@ policy pages before building further.
 - `fulfillment_assets` (the table holding delivered credentials) is the
   most locked-down table: only the buyer of a *fulfilled* order, or an
   admin, can ever `select` from it.
-- The service-role Supabase client (`createServiceRoleClient()`) bypasses
-  RLS entirely. It's used in exactly one place in this template — the
-  fulfill route — and only after verifying the caller's session shows
-  `role: admin`. Don't import it into client components or anything that
-  runs in the browser.
+- The secret-key Supabase client (`createServiceRoleClient()`, using
+  `SUPABASE_SECRET_KEY`) bypasses RLS entirely — same privilege level the
+  old `service_role` key had. It's used in exactly one place in this
+  template — the fulfill route — and only after verifying the caller's
+  session shows `role: admin`. Don't import it into client components or
+  anything that runs in the browser. (Supabase's API gateway now also
+  rejects `sb_secret_...` keys sent with a browser User-Agent as a second
+  line of defense, but treat this as server-only regardless.)
 - Order totals are always recalculated server-side from the `listings`
   table at checkout; the client only sends listing IDs and quantities.
 
@@ -161,7 +232,7 @@ policy pages before building further.
 app/
   (auth)/sign-in, sign-up        — Supabase email/password auth
   (shop)/listings, cart, checkout, orders/[id]  — buyer-facing storefront
-  account/orders                 — buyer's order history
+  account, account/orders        — account settings (username/password/sign out) + order history
   admin/orders, admin/listings   — admin dashboard (role-gated)
   api/orders                     — creates orders, re-prices server-side
   api/listings                   — admin CRUD for listings
@@ -169,17 +240,20 @@ app/
 components/
   ui/        — shadcn/ui primitives
   motion/    — reusable Framer Motion wrappers (FadeIn, StaggerGrid, PageTransition)
-  shop/      — cart provider, listing card/form, fulfill dialog, order timeline
+  shop/      — cart provider, listing card/form, fulfill dialog, order timeline, account settings form
   layout/    — header/footer
 lib/
   supabase/  — browser, server, service-role clients + middleware session refresh
   payments/  — provider abstraction (stubbed; see above)
+  categories.ts — fixed category list (slug/label/icon) driving the listing form + browse page
   prisma.ts  — Prisma client singleton (optional path — app currently uses Supabase client directly)
 prisma/
   schema.prisma  — mirrors the Supabase schema for typed Prisma queries/migrations
-  seed.ts
+  seed.ts         — seeds categories + example listings
 supabase/
-  migrations/0001_init.sql  — tables + RLS policies, source of truth for the DB
+  migrations/0001_init.sql            — tables + RLS policies, source of truth for the DB
+  migrations/0002_seed_categories.sql — inserts the fixed category rows (SQL-editor path)
+  migrations/0003_add_username.sql    — adds profiles.username
 ```
 
 ## Known gaps to fill in before shipping

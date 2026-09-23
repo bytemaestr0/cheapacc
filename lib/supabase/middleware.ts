@@ -42,19 +42,38 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
-  const isProtected = path.startsWith("/account") || path.startsWith("/admin");
+  const isAdminRoute = path === "/admin" || path.startsWith("/admin/");
+  const isAccountRoute = path === "/account" || path.startsWith("/account/");
 
-  if (isProtected && !user) {
+  // /admin is treated as if it doesn't exist for anyone who isn't a
+  // confirmed admin — including signed-out visitors. We deliberately
+  // return a genuine 404 (via rewrite) rather than redirecting to
+  // /sign-in or /, which would leak that the route exists at all and
+  // invite probing. Route existence itself is not sensitive info we
+  // want to hand out to unauthenticated or non-admin requests.
+  if (isAdminRoute) {
+    let isAdmin = false;
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", user.id)
+        .single();
+      isAdmin = profile?.role === "admin";
+    }
+
+    if (!isAdmin) {
+      const notFoundUrl = new URL("/not-found-admin", request.url);
+      return NextResponse.rewrite(notFoundUrl, { status: 404 });
+    }
+
+    return response;
+  }
+
+  if (isAccountRoute && !user) {
     const redirectUrl = new URL("/sign-in", request.url);
     redirectUrl.searchParams.set("redirect", path);
     return NextResponse.redirect(redirectUrl);
-  }
-
-  if (path.startsWith("/admin") && user) {
-    const isAdmin = user.app_metadata?.role === "admin";
-    if (!isAdmin) {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
   }
 
   return response;

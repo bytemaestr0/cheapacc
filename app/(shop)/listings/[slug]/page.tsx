@@ -2,9 +2,14 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
+import { CategoryBadge } from "@/components/shop/category-badge";
 import { FadeIn } from "@/components/motion/fade-in";
 import { formatPrice } from "@/lib/utils";
 import { AddToCartButton } from "@/components/shop/add-to-cart-button";
+
+// Public product page — cache per slug instead of hitting Supabase on
+// every visit. Stock/price edits show up within a minute.
+export const revalidate = 60;
 
 export default async function ListingDetailPage({
   params,
@@ -15,7 +20,7 @@ export default async function ListingDetailPage({
   const supabase = await createClient();
   const { data: listing } = await supabase
     .from("listings")
-    .select("*")
+    .select("*, categories(slug)")
     .eq("slug", slug)
     .eq("status", "active")
     .single();
@@ -33,6 +38,11 @@ export default async function ListingDetailPage({
               No image
             </div>
           )}
+          <CategoryBadge
+            slug={listing.categories?.slug}
+            size="md"
+            className="absolute left-3 top-3"
+          />
         </div>
       </FadeIn>
 

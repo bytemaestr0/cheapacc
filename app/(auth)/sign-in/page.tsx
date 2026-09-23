@@ -15,12 +15,15 @@ export default function SignInPage() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const supabase = createClient();
+    // persist: false makes the auth cookie a session cookie (cleared on
+    // browser close) instead of the ~1 year default — see lib/supabase/client.ts
+    const supabase = createClient({ persist: rememberMe });
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
 
@@ -56,6 +59,18 @@ export default function SignInPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              id="rememberMe"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-input text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+            <Label htmlFor="rememberMe" className="cursor-pointer font-normal text-muted-foreground">
+              Remember me on this device
+            </Label>
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Signing in..." : "Sign in"}

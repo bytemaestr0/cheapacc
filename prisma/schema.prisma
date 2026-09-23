@@ -33,6 +33,7 @@ enum ListingStatus {
 model Profile {
   id        String   @id @db.Uuid
   email     String   @unique
+  username  String?  @unique
   role      String   @default("customer") // "customer" | "admin"
   createdAt DateTime @default(now()) @map("created_at")
 

@@ -1,19 +1,32 @@
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatPrice } from "@/lib/utils";
 import { FulfillDialog } from "@/components/shop/fulfill-dialog";
+import { ConfirmOrderButton } from "@/components/shop/confirm-order-button";
 
 export const metadata = { title: "Admin — Orders" };
 
 export default async function AdminOrdersPage() {
-  const supabase = await createClient();
-  const { data: orders } = await supabase
+  const { supabase } = await requireAdmin();
+  // orders has two FKs into profiles (buyer_id and fulfilled_by), so the
+  // embed is ambiguous without a hint — !buyer_id tells PostgREST which
+  // relationship to use. Without this, Supabase either throws an
+  // "ambiguous relationship" error or picks unpredictably, and since we
+  // don't currently check `error` below, the effect looks like "orders
+  // don't show" (or `profiles` renders empty on every row).
+  const { data: orders, error } = await supabase
     .from("orders")
-    .select("*, profiles(email), order_items(*, listings(title))")
+    .select(
+      "id, status, total_cents, currency, created_at, profiles!buyer_id(email), order_items(quantity, unit_price_cents, listings(title))"
+    )
     .order("created_at", { ascending: false });
 
+  if (error) {
+    console.error("Failed to load orders:", error.message);
+  }
+
   return (
-    <div className="container max-w-4xl py-12">
+    <div>
       <h1 className="mb-2 text-2xl font-semibold tracking-tight">Orders</h1>
       <p className="mb-8 text-sm text-muted-foreground">
         Review paid orders and fulfill them manually. Buyers see delivered content the moment
@@ -57,15 +70,23 @@ export default async function AdminOrdersPage() {
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">{formatDate(order.created_at)}</td>
                 <td className="px-4 py-3">
-                  {(order.status === "paid" || order.status === "pending") && (
-                    <FulfillDialog orderId={order.id} />
-                  )}
+                  <div className="flex justify-end gap-2">
+                    {order.status === "pending" && (
+                      <ConfirmOrderButton orderId={order.id} />
+                    )}
+                    {order.status === "paid" && <FulfillDialog orderId={order.id} />}
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {(!orders || orders.length === 0) && (
+        {error && (
+          <p className="p-6 text-center text-sm text-destructive">
+            Couldn&apos;t load orders: {error.message}
+          </p>
+        )}
+        {!error && (!orders || orders.length === 0) && (
           <p className="p-6 text-center text-sm text-muted-foreground">No orders yet.</p>
         )}
       </div>

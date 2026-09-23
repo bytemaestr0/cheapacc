@@ -14,18 +14,15 @@ export default async function OrderDetailPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: order } = await supabase
-    .from("orders")
-    .select("*, order_items(*, listings(title, slug))")
-    .eq("id", id)
-    .single();
+  // These two queries don't depend on each other — run them in
+  // parallel instead of one after another, which was doubling the
+  // round-trip latency on this page for no reason.
+  const [{ data: order }, { data: assets }] = await Promise.all([
+    supabase.from("orders").select("*, order_items(*, listings(title, slug))").eq("id", id).single(),
+    supabase.from("fulfillment_assets").select("*").eq("order_id", id),
+  ]);
 
   if (!order) notFound();
-
-  const { data: assets } = await supabase
-    .from("fulfillment_assets")
-    .select("*")
-    .eq("order_id", id);
 
   return (
     <div className="container max-w-2xl py-12">

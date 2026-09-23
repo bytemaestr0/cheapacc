@@ -6,11 +6,19 @@ import { StaggerGrid, StaggerItem } from "@/components/motion/stagger-grid";
 import { ListingCard } from "@/components/shop/listing-card";
 import { createClient } from "@/lib/supabase/server";
 
+// Public, non-personalized content — safe to cache and reuse across
+// visitors instead of round-tripping to Supabase on every request.
+// Revalidates in the background at most once a minute; visitors get a
+// cached response instantly while a fresh copy is fetched behind the
+// scenes (stale-while-revalidate), so new/edited listings show up
+// within a minute without every request waiting on the database.
+export const revalidate = 60;
+
 export default async function HomePage() {
   const supabase = await createClient();
   const { data: listings } = await supabase
     .from("listings")
-    .select("*")
+    .select("*, categories(slug)")
     .eq("status", "active")
     .order("created_at", { ascending: false })
     .limit(6);
