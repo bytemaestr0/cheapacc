@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,6 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function SignInPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -31,7 +30,12 @@ export default function SignInPage() {
       toast.error(error.message);
       return;
     }
-    router.push(searchParams.get("redirect") || "/");
+    // Read the query string at submit time instead of via useSearchParams(),
+    // which would force this page to be wrapped in <Suspense> to prerender.
+    const redirect = new URLSearchParams(window.location.search).get("redirect");
+    // Only allow same-site relative paths to avoid open-redirects.
+    const safeRedirect = redirect && redirect.startsWith("/") && !redirect.startsWith("//") ? redirect : "/";
+    router.push(safeRedirect);
     router.refresh();
   }
 
