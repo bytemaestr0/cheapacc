@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import { CartProvider } from "@/components/shop/cart-provider";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteSidebar } from "@/components/layout/site-sidebar";
+import { CookieBanner } from "@/components/layout/cookie-banner";
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: {
@@ -19,14 +18,18 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body className="font-sans antialiased">
         <CartProvider>
           <div className="relative flex min-h-screen flex-col">
             <SiteHeader />
-            <main className="flex-1">{children}</main>
+            <div className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col gap-8 px-6 pt-8 md:flex-row">
+              <SiteSidebar />
+              <main className="min-w-0 flex-1">{children}</main>
+            </div>
             <SiteFooter />
           </div>
+          <CookieBanner />
           <Toaster position="top-center" richColors closeButton />
         </CartProvider>
       </body>

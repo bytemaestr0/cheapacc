@@ -3,7 +3,6 @@ import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { CategoryBadge } from "@/components/shop/category-badge";
-import { FadeIn } from "@/components/motion/fade-in";
 import { formatPrice } from "@/lib/utils";
 import { AddToCartButton } from "@/components/shop/add-to-cart-button";
 
@@ -20,7 +19,7 @@ export default async function ListingDetailPage({
   const supabase = await createClient();
   const { data: listing } = await supabase
     .from("listings")
-    .select("*, categories(slug)")
+    .select("*, categories(name, image_url)")
     .eq("slug", slug)
     .eq("status", "active")
     .single();
@@ -29,7 +28,7 @@ export default async function ListingDetailPage({
 
   return (
     <div className="container grid grid-cols-1 gap-12 py-12 md:grid-cols-2">
-      <FadeIn>
+      <>
         <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-border bg-muted">
           {listing.image_url ? (
             <Image src={listing.image_url} alt={listing.title} fill className="object-cover" />
@@ -39,14 +38,15 @@ export default async function ListingDetailPage({
             </div>
           )}
           <CategoryBadge
-            slug={listing.categories?.slug}
+            name={listing.categories?.name}
+            imageUrl={listing.categories?.image_url}
             size="md"
             className="absolute left-3 top-3"
           />
         </div>
-      </FadeIn>
+      </>
 
-      <FadeIn delay={0.1}>
+      <>
         <div className="space-y-6">
           <div>
             <div className="mb-2 flex items-center gap-2">
@@ -73,7 +73,7 @@ export default async function ListingDetailPage({
 
           <AddToCartButton listing={listing} />
         </div>
-      </FadeIn>
+      </>
     </div>
   );
 }

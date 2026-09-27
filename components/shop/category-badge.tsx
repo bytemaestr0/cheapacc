@@ -1,17 +1,19 @@
+import Image from "next/image";
+import { Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getCategoryConfig } from "@/lib/categories";
 
 export function CategoryBadge({
-  slug,
+  name,
+  imageUrl,
   className,
   size = "sm",
 }: {
-  slug: string | null | undefined;
+  name: string | null | undefined;
+  imageUrl?: string | null;
   className?: string;
   size?: "sm" | "md";
 }) {
-  const category = getCategoryConfig(slug);
-  const Icon = category.icon;
+  const iconSize = size === "sm" ? "h-3 w-3" : "h-4 w-4";
 
   return (
     <span
@@ -21,8 +23,12 @@ export function CategoryBadge({
         className
       )}
     >
-      <Icon className={cn(size === "sm" ? "h-3 w-3" : "h-4 w-4", category.colorClass)} />
-      {category.label}
+      {imageUrl ? (
+        <Image src={imageUrl} alt="" width={16} height={16} className={cn(iconSize, "rounded-full object-cover")} />
+      ) : (
+        <Tag className={iconSize} />
+      )}
+      {name ?? "Uncategorized"}
     </span>
   );
 }

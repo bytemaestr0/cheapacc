@@ -13,27 +13,26 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { CATEGORIES, DEFAULT_CATEGORY_SLUG } from "@/lib/categories";
 import type { Database } from "@/types/database";
 
 type Listing = Database["public"]["Tables"]["listings"]["Row"];
 
-/** id + slug pairs for rows currently in the `categories` table. */
+/** id + name pairs for rows currently in the `categories` table. */
 export interface CategoryOption {
   id: string;
-  slug: string;
+  name: string;
 }
 
 export function ListingForm({
   listing,
   categoryOptions,
-  initialCategorySlug,
+  initialCategoryId,
 }: {
   listing?: Listing;
-  /** Rows from the `categories` table — used to resolve slug -> id on submit. */
+  /** Rows from the `categories` table, admin-managed via /admin/categories. */
   categoryOptions: CategoryOption[];
-  /** Slug of listing's current category, if editing an existing listing. */
-  initialCategorySlug?: string;
+  /** Category id of listing's current category, if editing an existing listing. */
+  initialCategoryId?: string | null;
 }) {
   const router = useRouter();
   const [title, setTitle] = useState(listing?.title ?? "");
@@ -47,8 +46,8 @@ export function ListingForm({
   const [imageUrl, setImageUrl] = useState(listing?.image_url ?? "");
   const [uploading, setUploading] = useState(false);
   const [deliveryNotes, setDeliveryNotes] = useState(listing?.delivery_notes ?? "");
-  const [categorySlug, setCategorySlug] = useState(
-    initialCategorySlug ?? DEFAULT_CATEGORY_SLUG
+  const [categoryId, setCategoryId] = useState<string>(
+    initialCategoryId ?? categoryOptions[0]?.id ?? ""
   );
   const [loading, setLoading] = useState(false);
 
@@ -85,11 +84,8 @@ export function ListingForm({
     e.preventDefault();
     setLoading(true);
 
-    const matchedCategory = categoryOptions.find((c) => c.slug === categorySlug);
-    if (!matchedCategory) {
-      toast.error(
-        "Category list isn't set up in the database yet — run prisma/seed.ts or insert rows into `categories` matching lib/categories.ts."
-      );
+    if (!categoryId) {
+      toast.error("Create a category first at /admin/categories, then pick one here.");
       setLoading(false);
       return;
     }
@@ -103,7 +99,7 @@ export function ListingForm({
       status,
       image_url: imageUrl || null,
       delivery_notes: deliveryNotes || null,
-      category_id: matchedCategory.id,
+      category_id: categoryId,
     };
 
     const res = await fetch(
@@ -154,27 +150,31 @@ export function ListingForm({
 
       <div className="space-y-1.5">
         <Label>Category</Label>
-        <Select value={categorySlug} onValueChange={setCategorySlug}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {CATEGORIES.map((cat) => {
-              const Icon = cat.icon;
-              return (
-                <SelectItem key={cat.slug} value={cat.slug}>
-                  <span className="inline-flex items-center gap-2">
-                    <Icon className={`h-3.5 w-3.5 ${cat.colorClass}`} />
-                    {cat.label}
-                  </span>
+        {categoryOptions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No categories yet.{" "}
+            <a href="/admin/categories" className="underline">
+              Create one first
+            </a>
+            , then come back here.
+          </p>
+        ) : (
+          <Select value={categoryId} onValueChange={setCategoryId}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {categoryOptions.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
                 </SelectItem>
-              );
-            })}
-          </SelectContent>
-        </Select>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <p className="text-xs text-muted-foreground">
-          Defaults to &quot;Other&quot; — pick the platform/game this listing belongs to so it
-          shows up in the right section on the browse page.
+          Pick the game/platform this listing belongs to so it shows up in the right section on
+          the browse page. Manage the list at /admin/categories.
         </p>
       </div>
 

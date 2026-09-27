@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { ListingForm } from "@/components/shop/listing-form";
-import { DEFAULT_CATEGORY_SLUG } from "@/lib/categories";
 
 export const metadata = { title: "Edit listing" };
 
@@ -14,8 +13,8 @@ export default async function EditListingPage({
   const { supabase } = await requireAdmin();
 
   const [{ data: listing }, { data: categoryOptions }] = await Promise.all([
-    supabase.from("listings").select("*, categories(slug)").eq("id", id).single(),
-    supabase.from("categories").select("id, slug"),
+    supabase.from("listings").select("*, categories(id, name)").eq("id", id).single(),
+    supabase.from("categories").select("id, name").order("sort_order", { ascending: true }),
   ]);
 
   if (!listing) notFound();
@@ -26,7 +25,7 @@ export default async function EditListingPage({
       <ListingForm
         listing={listing}
         categoryOptions={categoryOptions ?? []}
-        initialCategorySlug={listing.categories?.slug ?? DEFAULT_CATEGORY_SLUG}
+        initialCategoryId={listing.categories?.id ?? null}
       />
     </div>
   );

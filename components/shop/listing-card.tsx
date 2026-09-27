@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,15 +12,14 @@ import { toast } from "sonner";
 import type { Database } from "@/types/database";
 
 type Listing = Database["public"]["Tables"]["listings"]["Row"] & {
-  categories?: { slug: string } | null;
+  categories?: { name: string; image_url: string | null } | null;
 };
 
 export function ListingCard({ listing }: { listing: Listing }) {
   const { addItem } = useCart();
 
   return (
-    <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.2, ease: "easeOut" }}>
-      <Card className="overflow-hidden">
+    <Card className="overflow-hidden">
         <Link href={`/listings/${listing.slug}`}>
           <div className="relative aspect-[4/3] w-full bg-muted">
             {listing.image_url ? (
@@ -37,7 +35,11 @@ export function ListingCard({ listing }: { listing: Listing }) {
                 No image
               </div>
             )}
-            <CategoryBadge slug={listing.categories?.slug} className="absolute left-3 top-3" />
+            <CategoryBadge
+              name={listing.categories?.name}
+              imageUrl={listing.categories?.image_url}
+              className="absolute left-3 top-3"
+            />
             {listing.stock_count <= 0 && (
               <Badge variant="secondary" className="absolute right-3 top-3">
                 Out of stock
@@ -71,6 +73,5 @@ export function ListingCard({ listing }: { listing: Listing }) {
           </Button>
         </CardFooter>
       </Card>
-    </motion.div>
   );
 }

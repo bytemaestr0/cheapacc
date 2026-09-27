@@ -5,7 +5,10 @@ export const metadata = { title: "New listing" };
 
 export default async function NewListingPage() {
   const { supabase } = await requireAdmin();
-  const { data: categoryOptions } = await supabase.from("categories").select("id, slug");
+  const { data: categoryOptions } = await supabase
+    .from("categories")
+    .select("id, name")
+    .order("sort_order", { ascending: true });
 
   return (
     <div className="max-w-2xl">

@@ -1,6 +1,6 @@
 # accountstore — digital goods storefront template
 
-Next.js (App Router) + Supabase + Prisma + Tailwind + shadcn/ui + Framer Motion.
+Next.js (App Router) + Supabase + Tailwind + shadcn/ui.
 
 Manual fulfillment out of the box: buyer pays (or, until you wire up a payment
 provider, just checks out), admin reviews the order and pastes in the
@@ -14,10 +14,8 @@ test the whole flow before deciding on Stripe or Paddle.
 |---|---|
 | Framework | Next.js 15, App Router, Server Components |
 | Auth + DB | Supabase (Postgres + Auth + Row Level Security) |
-| ORM | Prisma (optional — Supabase client is used by the app; Prisma is there for typed queries / migrations if you prefer it) |
 | Payments | Stubbed abstraction — wire in Stripe or Paddle when ready |
 | Styling | Tailwind CSS + shadcn/ui (Radix primitives) |
-| Motion | Framer Motion |
 
 ## 1. Install dependencies
 
@@ -36,9 +34,6 @@ npm install
    (`sb_secret_...`). These replace the old `anon` and `service_role` JWT
    keys — Supabase is deprecating those by the end of 2026, so this
    template uses the new keys directly rather than the legacy ones.
-4. On the **ORMs** tab, pick **Prisma** and copy the connection strings it
-   gives you: the pooled one (port 6543, for `DATABASE_URL`) and the
-   direct one (port 5432, for `DIRECT_URL`).
 
 Copy `.env.example` to `.env` and fill these in:
 
@@ -50,8 +45,6 @@ cp .env.example .env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=   # sb_publishable_..., safe in the browser
 SUPABASE_SECRET_KEY=                    # sb_secret_..., server-only, keep secret
-DATABASE_URL=                           # pooled (6543), used at runtime by Prisma
-DIRECT_URL=                             # direct (5432), used for migrations
 ```
 
 > If your project is old enough to still show `anon` / `service_role`
@@ -61,38 +54,22 @@ DIRECT_URL=                             # direct (5432), used for migrations
 
 ## 3. Set up the database
 
-You have two equally valid options — pick one:
-
-**Option A — SQL migration (fastest to get running):**
 Open the Supabase SQL editor and run, in order:
 1. `supabase/migrations/0001_init.sql` — creates all tables, the
    `handle_new_user` trigger (auto-creates a `profiles` row on signup), and
    all Row Level Security policies.
-2. `supabase/migrations/0002_seed_categories.sql` — inserts the fixed
-   category set (Steam, Valorant, CS:GO, Minecraft, Fortnite, Other) that
-   the listing form and browse page expect. Without this, the category
-   dropdown on `/admin/listings/new` has nothing to select.
-3. `supabase/migrations/0003_add_username.sql` — adds a nullable, unique
-   `username` column to `profiles` for the account settings page
-   (`/account`). Existing users just have `username = null` until they set
-   one.
-
-**Option B — Prisma migrate:**
-```bash
-npx prisma migrate dev --name init
-```
-Note: Prisma won't create the `handle_new_user` trigger or RLS policies
-(those are Postgres/Supabase-specific, not part of Prisma's schema
-language), so you'd still need to run the trigger + policy sections of
-`0001_init.sql` by hand afterward. If you're not sure which to pick, use
-Option A. Either way, `npm run db:seed` (step 5 below) inserts the same
-category rows via Prisma, so you don't need to also run
-`0002_seed_categories.sql` if you're seeding that way.
-
-Either way, generate the Prisma client so `lib/prisma.ts` works:
-```bash
-npx prisma generate
-```
+2. `supabase/migrations/0002_seed_categories.sql` — no-op placeholder, kept
+   only for migration history. Categories are created from the admin UI now
+   (see step 4 below), not seeded via SQL.
+3. `supabase/migrations/0002_listing_images_storage.sql` — creates the
+   storage bucket used for listing images.
+4. `supabase/migrations/0003_add_username.sql` — adds a nullable, unique
+   `username` column to `profiles` for the account settings page.
+5. `supabase/migrations/0004_admin_categories.sql` — adds `image_url` and
+   `sort_order` to `categories`, makes deleting a category set
+   `listings.category_id` to `NULL` instead of blocking the delete, and
+   creates the `category-images` storage bucket (same admin-only write
+   policy pattern as listing images).
 
 ## 4. Create your admin user
 
@@ -104,19 +81,11 @@ npx prisma generate
    ```
    Admin routes (`/admin/*`) check `profiles.role`, and `middleware.ts`
    redirects non-admins away from `/admin`.
+3. Sign in as that user and go to `/admin/categories` to create at least
+   one category — the listing form needs one to exist before you can
+   create or edit a listing.
 
-## 5. Seed example data (optional)
-
-```bash
-npm run db:seed
-```
-Inserts the fixed category set (see step 3) plus two example listings —
-one filed under Steam, one under Other — so `/`, `/listings`, and the
-admin category dropdown aren't empty on first run. Safe to run even if
-you already ran `0002_seed_categories.sql` in the SQL editor; both use
-upserts keyed on slug.
-
-## 6. Run it
+## 5. Run it
 
 ```bash
 npm run dev
@@ -125,29 +94,38 @@ Visit `http://localhost:3000`.
 
 ## Categories
 
-The storefront uses a fixed category list (Steam, Valorant, CS:GO,
-Minecraft, Fortnite, Other) rather than letting admins create arbitrary
-categories. This keeps the browse page's grouped sections and icons
-predictable. The list lives in one place: `lib/categories.ts`.
+Categories are fully admin-managed at `/admin/categories` — no fixed list
+in app code anymore. An admin can create, rename, re-slug, upload an image
+for, reorder, and delete categories from that page.
 
-- **Icons are generic `lucide-react` glyphs, not brand logos** — game/platform
-  names and logos are trademarks of their respective owners, so no Steam,
-  Riot, Valve, Mojang, or Epic artwork is reproduced here.
+- Each category has a `name`, a `slug` (auto-generated from the name if
+  left blank), an optional `image_url`, and a `sort_order` used everywhere
+  categories are listed (sidebar, browse page sections, filter pills).
+- Category images upload to the `category-images` Supabase Storage bucket,
+  the same way listing photos upload to `listing-images` — see
+  `app/api/admin/categories/upload/route.ts`.
 - The listing form (`/admin/listings/new` and `/admin/listings/[id]`)
-  shows a category dropdown that defaults to **Other**. Selecting a
-  category resolves it to the matching row's `id` in the `categories`
-  table before submitting.
+  shows a dropdown of existing categories by name and submits the chosen
+  row's `id` directly. If no categories exist yet, the form tells you to
+  create one at `/admin/categories` first.
 - The browse page (`/listings`) groups active listings into sections by
-  category, in the order defined in `lib/categories.ts`, and skips empty
-  sections. Filter pills at the top link to `/listings?category=<slug>`
-  for a single-category view.
-- **To add a category:** add an entry to the `CATEGORIES` array in
-  `lib/categories.ts` (slug, label, a `lucide-react` icon, a color class),
-  then insert a matching row into the `categories` table with the same
-  slug (either via SQL or by adding it to `prisma/seed.ts`). The slug is
-  the link between the two — if they don't match, the new category won't
-  render an icon/label (it'll fall back to "Other" styling) even though
-  the underlying data is fine.
+  category, in `sort_order`, and skips empty sections. Filter pills at the
+  top link to `/listings?category=<slug>` for a single-category view.
+  Listings whose category was deleted show up under "Uncategorized"
+  rather than disappearing.
+- **Deleting a category does not delete its listings** — the migration's
+  foreign key is `on delete set null`, so those listings just lose their
+  category and fall back to "Uncategorized" until reassigned.
+
+## Search
+
+The browse page (`/listings`) has a search box (also mirrored in the site
+header) that matches against listing title, description, and category
+name via the `?q=` query param. It's an in-memory filter over the same
+cached fetch used for category filtering — see
+`app/(shop)/listings/page.tsx` — not a database full-text search, so it's
+fine for a catalog of hundreds/low-thousands of listings but isn't meant
+to scale to a huge catalog as-is.
 
 ## Account settings
 
@@ -239,21 +217,17 @@ app/
   api/admin/orders/[id]/fulfill  — the one place that writes delivered content
 components/
   ui/        — shadcn/ui primitives
-  motion/    — reusable Framer Motion wrappers (FadeIn, StaggerGrid, PageTransition)
-  shop/      — cart provider, listing card/form, fulfill dialog, order timeline, account settings form
-  layout/    — header/footer
+  shop/      — cart provider, listing card/form, category manager, fulfill dialog, order timeline, account settings form
+  layout/    — header/footer/sidebar/cookie banner
 lib/
   supabase/  — browser, server, service-role clients + middleware session refresh
   payments/  — provider abstraction (stubbed; see above)
-  categories.ts — fixed category list (slug/label/icon) driving the listing form + browse page
-  prisma.ts  — Prisma client singleton (optional path — app currently uses Supabase client directly)
-prisma/
-  schema.prisma  — mirrors the Supabase schema for typed Prisma queries/migrations
-  seed.ts         — seeds categories + example listings
 supabase/
   migrations/0001_init.sql            — tables + RLS policies, source of truth for the DB
-  migrations/0002_seed_categories.sql — inserts the fixed category rows (SQL-editor path)
+  migrations/0002_seed_categories.sql — no-op placeholder (categories are admin-managed now)
+  migrations/0002_listing_images_storage.sql — storage bucket for listing images
   migrations/0003_add_username.sql    — adds profiles.username
+  migrations/0004_admin_categories.sql — categories.image_url/sort_order, category-images bucket
 ```
 
 ## Known gaps to fill in before shipping

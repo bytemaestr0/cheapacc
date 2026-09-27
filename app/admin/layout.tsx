@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 
 const ADMIN_NAV = [
   { href: "/admin/listings", label: "Listings" },
+  { href: "/admin/categories", label: "Categories" },
   { href: "/admin/orders", label: "Orders" },
   { href: "/admin/users", label: "Users" },
 ];

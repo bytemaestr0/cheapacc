@@ -11,7 +11,7 @@ export default async function AdminListingsPage() {
   const { supabase } = await requireAdmin();
   const { data: listings } = await supabase
     .from("listings")
-    .select("id, title, price_cents, currency, stock_count, status, categories(slug)")
+    .select("id, title, price_cents, currency, stock_count, status, categories(name, image_url)")
     .order("created_at", { ascending: false });
 
   return (
@@ -43,7 +43,7 @@ export default async function AdminListingsPage() {
               <tr key={listing.id} className="border-t border-border">
                 <td className="px-4 py-3 font-medium">{listing.title}</td>
                 <td className="px-4 py-3">
-                  <CategoryBadge slug={listing.categories?.slug} />
+                  <CategoryBadge name={listing.categories?.name} imageUrl={listing.categories?.image_url} />
                 </td>
                 <td className="px-4 py-3">{formatPrice(listing.price_cents, listing.currency)}</td>
                 <td className="px-4 py-3">{listing.stock_count}</td>
