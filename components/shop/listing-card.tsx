@@ -19,15 +19,15 @@ export function ListingCard({ listing }: { listing: Listing }) {
   const { addItem } = useCart();
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="glow-border group/card flex h-full flex-col overflow-hidden transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_30px_60px_-30px_hsl(var(--primary)/.55)]">
         <Link href={`/listings/${listing.slug}`}>
-          <div className="relative aspect-[4/3] w-full bg-muted">
+          <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
             {listing.image_url ? (
               <Image
                 src={listing.image_url}
                 alt={listing.title}
                 fill
-                className="object-cover"
+                className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-110"
                 sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
               />
             ) : (
@@ -40,6 +40,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
               imageUrl={listing.categories?.image_url}
               className="absolute left-3 top-3"
             />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-card/80 via-transparent to-transparent" />
             {listing.stock_count <= 0 && (
               <Badge variant="secondary" className="absolute right-3 top-3">
                 Out of stock
@@ -47,14 +48,14 @@ export function ListingCard({ listing }: { listing: Listing }) {
             )}
           </div>
         </Link>
-        <CardContent className="space-y-1 pt-4">
-          <Link href={`/listings/${listing.slug}`} className="font-medium hover:underline">
+        <CardContent className="flex-1 space-y-1.5 pt-4">
+          <Link href={`/listings/${listing.slug}`} className="font-display text-lg font-semibold leading-snug transition-colors hover:text-primary">
             {listing.title}
           </Link>
           <p className="line-clamp-2 text-sm text-muted-foreground">{listing.description}</p>
         </CardContent>
-        <CardFooter className="flex items-center justify-between">
-          <span className="font-semibold">{formatPrice(listing.price_cents, listing.currency)}</span>
+        <CardFooter className="flex items-center justify-between gap-3">
+          <span className="font-display text-xl font-bold">{formatPrice(listing.price_cents, listing.currency)}</span>
           <Button
             size="sm"
             disabled={listing.stock_count <= 0}

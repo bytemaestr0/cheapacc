@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Ticket } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCart } from "@/components/shop/cart-provider";
 import { formatPrice } from "@/lib/utils";
@@ -83,6 +85,24 @@ export default function CheckoutPage() {
           </CardContent>
         </Card>
 
+        {/* Placeholder only: not wired to anything yet. Not sent with the order. */}
+        <div className="mt-6 space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="referral" className="flex items-center gap-2">
+              <Ticket className="h-4 w-4 text-primary" /> Referral code
+            </Label>
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-semibold text-primary">
+              Coming soon
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <Input id="referral" placeholder="Enter referral code" disabled autoComplete="off" className="flex-1" />
+            <Button type="button" variant="outline" disabled>
+              Apply
+            </Button>
+          </div>
+        </div>
+
         <div className="mt-6 space-y-2">
           <Label htmlFor="note">Note for the fulfillment team (optional)</Label>
           <textarea
@@ -90,7 +110,7 @@ export default function CheckoutPage() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="w-full rounded-xl border border-input bg-white/[.03] px-3.5 py-2 text-base sm:text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             placeholder="Anything we should know before fulfilling your order?"
           />
         </div>

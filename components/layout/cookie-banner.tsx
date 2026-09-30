@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Cookie } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const STORAGE_KEY = "cookie-consent-ack";
@@ -10,9 +12,7 @@ export function CookieBanner() {
 
   useEffect(() => {
     try {
-      if (!localStorage.getItem(STORAGE_KEY)) {
-        setVisible(true);
-      }
+      if (!localStorage.getItem(STORAGE_KEY)) setVisible(true);
     } catch {
       // localStorage unavailable (e.g. blocked) — just don't show the banner.
     }
@@ -20,29 +20,26 @@ export function CookieBanner() {
 
   function dismiss() {
     setVisible(false);
-    try {
-      localStorage.setItem(STORAGE_KEY, "1");
-    } catch {
-      // ignore
-    }
+    try { localStorage.setItem(STORAGE_KEY, "1"); } catch { /* ignore */ }
   }
 
-  if (!visible) return null;
-
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-      <div className="container flex flex-col items-center justify-between gap-4 py-4 text-sm md:flex-row">
-        <div>
-          <p className="font-medium">We use cookies</p>
-          <p className="text-muted-foreground">
-            Cookies keep you signed in and remember your cart. By using this site you agree to
-            our use of them.
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ y: 80, opacity: 0, scale: 0.96 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: 60, opacity: 0 }}
+          transition={{ delay: 1.2, type: "spring", stiffness: 260, damping: 26 }}
+          className="glass fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-xl items-center gap-4 rounded-2xl p-4 shadow-[0_20px_60px_-15px_#000] sm:bottom-5"
+        >
+          <span className="hidden h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary sm:grid"><Cookie className="h-5 w-5" /></span>
+          <p className="flex-1 text-sm leading-snug text-muted-foreground">
+            <span className="font-semibold text-foreground">We use cookies.</span> They keep you signed in and remember your cart.
           </p>
-        </div>
-        <Button onClick={dismiss} className="shrink-0">
-          Okay, understood.
-        </Button>
-      </div>
-    </div>
+          <Button onClick={dismiss} size="sm" className="shrink-0">Got it</Button>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

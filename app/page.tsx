@@ -3,6 +3,9 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ListingCard } from "@/components/shop/listing-card";
 import { CategoriesSection } from "@/components/shop/categories-section";
+import { Hero } from "@/components/shop/hero";
+import { FadeIn } from "@/components/motion/fade-in";
+import { StaggerGrid, StaggerItem } from "@/components/motion/stagger-grid";
 import { createClient } from "@/lib/supabase/server";
 
 // Public, non-personalized content — safe to cache and reuse across
@@ -24,24 +27,27 @@ export default async function HomePage() {
 
   return (
     <>
+      <Hero />
       <CategoriesSection />
 
-      <section className="container py-16">
-        <div className="mb-8 flex items-end justify-between">
+      <section className="mx-auto max-w-[1280px] px-5 py-14 sm:px-6">
+        <FadeIn className="mb-8 flex items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Latest listings</h2>
-            <p className="text-sm text-muted-foreground">Freshly added, ready to review.</p>
+            <h2 className="text-2xl font-bold sm:text-3xl">Latest listings</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Freshly added, ready to review.</p>
           </div>
-          <Button variant="ghost" asChild>
+          <Button variant="outline" size="sm" asChild className="group shrink-0">
             <Link href="/listings">
-              View all <ArrowRight className="ml-1 h-4 w-4" />
+              View all <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
-        </div>
+        </FadeIn>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <StaggerGrid className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {(listings ?? []).map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
+            <StaggerItem key={listing.id}>
+              <ListingCard listing={listing} />
+            </StaggerItem>
           ))}
           {(!listings || listings.length === 0) && (
             <p className="col-span-full text-sm text-muted-foreground">
@@ -52,7 +58,7 @@ export default async function HomePage() {
               .
             </p>
           )}
-        </div>
+        </StaggerGrid>
       </section>
     </>
   );

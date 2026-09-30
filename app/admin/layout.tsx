@@ -15,19 +15,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="container max-w-5xl py-10">
-      <div className="mb-8 flex items-center justify-between border-b border-border pb-4">
+      <div className="mb-8 flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Admin
           </p>
           <h1 className="text-xl font-semibold tracking-tight">Store management</h1>
         </div>
-        <nav className="flex gap-1 rounded-md bg-muted p-1 text-sm font-medium">
+        <nav className="flex gap-1 overflow-x-auto rounded-xl bg-muted p-1 text-sm font-medium">
           {ADMIN_NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-sm px-3 py-1.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground"
+              className="whitespace-nowrap rounded-lg px-3 py-1.5 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
             >
               {item.label}
             </Link>
