@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge } from "@/components/ui/badge";
 import { CategoryBadge } from "@/components/shop/category-badge";
 import { formatPrice } from "@/lib/utils";
+import { OptionList } from "@/components/shop/option-chip";
+import { AuthorCard } from "@/components/shop/author-badge";
+import { resolveAuthor, type Author } from "@/lib/authors";
 import { AddToCartButton } from "@/components/shop/add-to-cart-button";
 
 // Public product page — cache per slug instead of hitting Supabase on
@@ -19,12 +22,15 @@ export default async function ListingDetailPage({
   const supabase = await createClient();
   const { data: listing } = await supabase
     .from("listings")
-    .select("*, categories(name, image_url)")
+    .select("*, categories(name, image_url), authors(*)")
     .eq("slug", slug)
     .eq("status", "active")
     .single();
 
   if (!listing) notFound();
+
+  const { data: defaultAuthor } = await supabase.from("authors").select("*").eq("is_default", true).maybeSingle();
+  const author = resolveAuthor(listing.authors as Author | null, defaultAuthor);
 
   return (
     <div className="container grid grid-cols-1 gap-12 py-12 md:grid-cols-2">
@@ -61,6 +67,10 @@ export default async function ListingDetailPage({
               {formatPrice(listing.price_cents, listing.currency)}
             </p>
           </div>
+
+          <AuthorCard author={author} />
+
+          <OptionList value={listing.options} />
 
           <p className="whitespace-pre-line text-muted-foreground">{listing.description}</p>
 

@@ -9,10 +9,14 @@ import { CategoryBadge } from "@/components/shop/category-badge";
 import { formatPrice } from "@/lib/utils";
 import { useCart } from "@/components/shop/cart-provider";
 import { toast } from "sonner";
+import { OptionList } from "@/components/shop/option-chip";
+import { AuthorLine } from "@/components/shop/author-badge";
+import type { DisplayAuthor } from "@/lib/authors";
 import type { Database } from "@/types/database";
 
 type Listing = Database["public"]["Tables"]["listings"]["Row"] & {
   categories?: { name: string; image_url: string | null } | null;
+  author?: DisplayAuthor;
 };
 
 export function ListingCard({ listing }: { listing: Listing }) {
@@ -53,6 +57,8 @@ export function ListingCard({ listing }: { listing: Listing }) {
             {listing.title}
           </Link>
           <p className="line-clamp-2 text-sm text-muted-foreground">{listing.description}</p>
+          <OptionList value={listing.options} max={3} className="pt-1" />
+          {listing.author && <div className="pt-1.5"><AuthorLine author={listing.author} /></div>}
         </CardContent>
         <CardFooter className="flex items-center justify-between gap-3">
           <span className="font-display text-xl font-bold">{formatPrice(listing.price_cents, listing.currency)}</span>

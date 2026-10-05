@@ -10,10 +10,15 @@ export default async function NewListingPage() {
     .select("id, name")
     .order("sort_order", { ascending: true });
 
+  const { data: authorOptions } = await supabase
+    .from("authors")
+    .select("id, name, is_default")
+    .order("created_at", { ascending: true });
+
   return (
     <div className="max-w-2xl">
       <h1 className="mb-8 text-2xl font-semibold tracking-tight">New listing</h1>
-      <ListingForm categoryOptions={categoryOptions ?? []} />
+      <ListingForm categoryOptions={categoryOptions ?? []} authorOptions={authorOptions ?? []} />
     </div>
   );
 }

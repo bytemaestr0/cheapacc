@@ -73,8 +73,48 @@ export type Database = {
           },
         ]
       }
+      authors: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          is_anonymous: boolean
+          is_default: boolean
+          name: string
+          rating: number
+          review_count: number
+          sales_count: number
+          tags: string[]
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          is_anonymous?: boolean
+          is_default?: boolean
+          name: string
+          rating?: number
+          review_count?: number
+          sales_count?: number
+          tags?: string[]
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          is_anonymous?: boolean
+          is_default?: boolean
+          name?: string
+          rating?: number
+          review_count?: number
+          sales_count?: number
+          tags?: string[]
+        }
+        Relationships: []
+      }
       listings: {
         Row: {
+          author_id: string | null
           category_id: string | null
           created_at: string
           currency: string
@@ -82,6 +122,7 @@ export type Database = {
           description: string
           id: string
           image_url: string | null
+          options: Json
           price_cents: number
           slug: string
           status: Database["public"]["Enums"]["listing_status"]
@@ -90,6 +131,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          author_id?: string | null
           category_id?: string | null
           created_at?: string
           currency?: string
@@ -97,6 +139,7 @@ export type Database = {
           description: string
           id?: string
           image_url?: string | null
+          options?: Json
           price_cents: number
           slug: string
           status?: Database["public"]["Enums"]["listing_status"]
@@ -105,6 +148,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          author_id?: string | null
           category_id?: string | null
           created_at?: string
           currency?: string
@@ -112,6 +156,7 @@ export type Database = {
           description?: string
           id?: string
           image_url?: string | null
+          options?: Json
           price_cents?: number
           slug?: string
           status?: Database["public"]["Enums"]["listing_status"]
@@ -120,6 +165,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "listings_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "authors"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "listings_category_id_fkey"
             columns: ["category_id"]

@@ -6,6 +6,7 @@ import { CategoriesSection } from "@/components/shop/categories-section";
 import { Hero } from "@/components/shop/hero";
 import { FadeIn } from "@/components/motion/fade-in";
 import { StaggerGrid, StaggerItem } from "@/components/motion/stagger-grid";
+import { resolveAuthor, type Author } from "@/lib/authors";
 import { createClient } from "@/lib/supabase/server";
 
 // Public, non-personalized content — safe to cache and reuse across
@@ -20,10 +21,12 @@ export default async function HomePage() {
   const supabase = await createClient();
   const { data: listings } = await supabase
     .from("listings")
-    .select("*, categories(name, image_url)")
+    .select("*, categories(name, image_url), authors(*)")
     .eq("status", "active")
     .order("created_at", { ascending: false })
     .limit(6);
+  const { data: defaultAuthor } = await supabase.from("authors").select("*").eq("is_default", true).maybeSingle();
+  const withAuthor = (listings ?? []).map((l) => ({ ...l, author: resolveAuthor(l.authors as Author | null, defaultAuthor) }));
 
   return (
     <>
@@ -44,12 +47,12 @@ export default async function HomePage() {
         </FadeIn>
 
         <StaggerGrid className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {(listings ?? []).map((listing) => (
+          {withAuthor.map((listing) => (
             <StaggerItem key={listing.id}>
               <ListingCard listing={listing} />
             </StaggerItem>
           ))}
-          {(!listings || listings.length === 0) && (
+          {withAuthor.length === 0 && (
             <p className="col-span-full text-sm text-muted-foreground">
               No listings yet — add some from{" "}
               <Link href="/admin/listings" className="underline underline-offset-4">

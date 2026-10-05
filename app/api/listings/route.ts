@@ -12,6 +12,8 @@ const bodySchema = z.object({
   image_url: z.string().url().nullable().optional(),
   delivery_notes: z.string().nullable().optional(),
   category_id: z.string().uuid().nullable().optional(),
+  author_id: z.string().uuid().nullable().optional(),
+  options: z.array(z.object({ label: z.string().trim().min(1).max(60), tone: z.enum(["positive", "negative", "info"]) })).max(20).default([]),
 });
 
 async function requireAdmin() {

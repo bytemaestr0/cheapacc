@@ -13,6 +13,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { OptionEditor } from "@/components/shop/option-editor";
+import { parseOptions, type ListingOption } from "@/lib/listing-options";
 import type { Database } from "@/types/database";
 
 type Listing = Database["public"]["Tables"]["listings"]["Row"];
@@ -27,7 +29,10 @@ export function ListingForm({
   listing,
   categoryOptions,
   initialCategoryId,
+  authorOptions = [],
 }: {
+  /** Rows from `authors`. Empty selection = default author (site owner). */
+  authorOptions?: { id: string; name: string; is_default: boolean }[];
   listing?: Listing;
   /** Rows from the `categories` table, admin-managed via /admin/categories. */
   categoryOptions: CategoryOption[];
@@ -49,6 +54,8 @@ export function ListingForm({
   const [categoryId, setCategoryId] = useState<string>(
     initialCategoryId ?? categoryOptions[0]?.id ?? ""
   );
+  const [authorId, setAuthorId] = useState<string>(listing?.author_id ?? "default");
+  const [options, setOptions] = useState<ListingOption[]>(parseOptions(listing?.options));
   const [loading, setLoading] = useState(false);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -100,6 +107,8 @@ export function ListingForm({
       image_url: imageUrl || null,
       delivery_notes: deliveryNotes || null,
       category_id: categoryId,
+      author_id: authorId === "default" ? null : authorId,
+      options: options.filter((o) => o.label.trim()),
     };
 
     const res = await fetch(
@@ -177,6 +186,28 @@ export function ListingForm({
           the browse page. Manage the list at /admin/categories.
         </p>
       </div>
+
+      <div className="space-y-1.5">
+        <Label>Author</Label>
+        <Select value={authorId} onValueChange={setAuthorId}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">
+              Default{authorOptions.find((a) => a.is_default) ? ` (${authorOptions.find((a) => a.is_default)!.name})` : " (site owner)"}
+            </SelectItem>
+            {authorOptions.filter((a) => !a.is_default).map((a) => (
+              <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          Who sold this. Manage authors at /admin/authors.
+        </p>
+      </div>
+
+      <OptionEditor value={options} onChange={setOptions} />
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-1.5">

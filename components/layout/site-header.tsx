@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useScroll, useSpring } from "framer-motion";
 import {
-  ShoppingCart, User, Receipt, ShoppingBag, Search, ShieldCheck, FileText, Sparkles, Flag, Store, ChevronRight,
+  ShoppingCart, User, Receipt, ShoppingBag, Search, ShieldCheck, FileText, CircleHelp, Flag, Store, ChevronRight,
 } from "lucide-react";
 import { useCart } from "@/components/shop/cart-provider";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { href: "/listings", label: "Browse", icon: Store },
   { href: "/terms", label: "Rules & Guarantee", icon: ShieldCheck },
-  { href: "/faq", label: "New Features", icon: Sparkles },
+  { href: "/faq", label: "FAQ", icon: CircleHelp },
   { href: "/support", label: "Report a Bug", icon: Flag },
 ];
 const MORE = [{ href: "/privacy", label: "Privacy", icon: FileText }];

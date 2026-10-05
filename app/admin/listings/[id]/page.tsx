@@ -12,9 +12,10 @@ export default async function EditListingPage({
   const { id } = await params;
   const { supabase } = await requireAdmin();
 
-  const [{ data: listing }, { data: categoryOptions }] = await Promise.all([
+  const [{ data: listing }, { data: categoryOptions }, { data: authorOptions }] = await Promise.all([
     supabase.from("listings").select("*, categories(id, name)").eq("id", id).single(),
     supabase.from("categories").select("id, name").order("sort_order", { ascending: true }),
+    supabase.from("authors").select("id, name, is_default").order("created_at", { ascending: true }),
   ]);
 
   if (!listing) notFound();
@@ -25,6 +26,7 @@ export default async function EditListingPage({
       <ListingForm
         listing={listing}
         categoryOptions={categoryOptions ?? []}
+        authorOptions={authorOptions ?? []}
         initialCategoryId={listing.categories?.id ?? null}
       />
     </div>

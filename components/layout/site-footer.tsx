@@ -4,7 +4,7 @@ import { ShoppingBag } from "lucide-react";
 const links = [
   { href: "/terms", label: "Rules & Guarantee" },
   { href: "/privacy", label: "Privacy" },
-  { href: "/faq", label: "New Features" },
+  { href: "/faq", label: "FAQ" },
   { href: "/support", label: "Support" },
 ];
 

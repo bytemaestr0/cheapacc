@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ListingCard } from "@/components/shop/listing-card";
-import { ListingSearchForm } from "@/components/shop/listing-search-form";
+import { ListingFilters } from "@/components/shop/listing-filters";
+import { resolveAuthor, type Author } from "@/lib/authors";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
@@ -16,28 +17,30 @@ export const revalidate = 60;
 type CategoryRow = Database["public"]["Tables"]["categories"]["Row"];
 type ListingRow = Database["public"]["Tables"]["listings"]["Row"] & {
   categories: Pick<CategoryRow, "id" | "name" | "slug" | "image_url"> | null;
+  authors: Author | null;
 };
 
 export default async function ListingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; q?: string }>;
+  searchParams: Promise<{ category?: string; q?: string; min?: string; max?: string; sort?: string }>;
 }) {
-  const { category: activeSlug, q } = await searchParams;
+  const { category: activeSlug, q, min, max, sort } = await searchParams;
   const query = (q ?? "").trim();
   const supabase = await createClient();
 
-  const [{ data: listings }, { data: categories }] = await Promise.all([
+  const [{ data: listings }, { data: categories }, { data: defaultAuthor }] = await Promise.all([
     supabase
       .from("listings")
-      .select("*, categories(id, name, slug, image_url)")
+      .select("*, categories(id, name, slug, image_url), authors(*)")
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .returns<ListingRow[]>(),
     supabase.from("categories").select("*").order("sort_order", { ascending: true }),
+    supabase.from("authors").select("*").eq("is_default", true).maybeSingle(),
   ]);
 
-  const all = listings ?? [];
+  const all = (listings ?? []).map((l) => ({ ...l, author: resolveAuthor(l.authors, defaultAuthor) }));
   const allCategories = categories ?? [];
 
   // Search across title, description, and category name.
@@ -48,9 +51,35 @@ export default async function ListingsPage({
       })
     : all;
 
-  const filtered = activeSlug
+  const minCents = min !== undefined && min !== "" && !isNaN(Number(min)) ? Math.round(Number(min) * 100) : null;
+  const maxCents = max !== undefined && max !== "" && !isNaN(Number(max)) ? Math.round(Number(max) * 100) : null;
+  const sortKey = ["cheap", "expensive", "newest", "oldest"].includes(sort ?? "") ? sort : "";
+
+  const byCategory = activeSlug
     ? searched.filter((l) => l.categories?.slug === activeSlug)
     : searched;
+  const filtered = byCategory
+    .filter((l) => (minCents === null || l.price_cents >= minCents) && (maxCents === null || l.price_cents <= maxCents))
+    .sort((a, b) => {
+      switch (sortKey) {
+        case "cheap": return a.price_cents - b.price_cents;
+        case "expensive": return b.price_cents - a.price_cents;
+        case "oldest": return a.created_at.localeCompare(b.created_at);
+        default: return b.created_at.localeCompare(a.created_at);
+      }
+    });
+
+  // Keep the other active filters when switching category.
+  const keep = (slug?: string) => {
+    const sp = new URLSearchParams();
+    if (slug) sp.set("category", slug);
+    if (query) sp.set("q", query);
+    if (min) sp.set("min", min);
+    if (max) sp.set("max", max);
+    if (sortKey) sp.set("sort", sortKey);
+    const qs = sp.toString();
+    return qs ? `/listings?${qs}` : "/listings";
+  };
 
   const activeCategory = allCategories.find((c) => c.slug === activeSlug);
 
@@ -65,7 +94,7 @@ export default async function ListingsPage({
 
   const uncategorized = searched.filter((l) => !l.categories);
 
-  const isFiltering = Boolean(activeSlug || query);
+  const isFiltering = Boolean(activeSlug || query || minCents !== null || maxCents !== null || sortKey);
 
   return (
     <div className="container py-12">
@@ -77,34 +106,34 @@ export default async function ListingsPage({
       </div>
 
       <div className="mb-8">
-        <ListingSearchForm initialQuery={query} activeCategory={activeSlug} />
+        <ListingFilters count={isFiltering ? filtered.length : all.length} />
       </div>
 
       {/* Category filter pills */}
       <div className="mb-12 flex flex-wrap gap-2">
         <Link
-          href={query ? `/listings?q=${encodeURIComponent(query)}` : "/listings"}
+          href={keep()}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+            "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all active:scale-95",
             !activeSlug
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-background hover:bg-muted"
+              ? "border-transparent bg-gradient-to-br from-primary to-[hsl(var(--rose))] text-white shadow-[0_8px_24px_-10px_hsl(var(--primary))]"
+              : "border-white/10 bg-white/[.04] text-muted-foreground hover:bg-white/[.09] hover:text-foreground"
           )}
         >
           All
         </Link>
         {allCategories.map((cat) => {
           const isActive = activeSlug === cat.slug;
-          const href = `/listings?category=${cat.slug}${query ? `&q=${encodeURIComponent(query)}` : ""}`;
+          const href = keep(cat.slug);
           return (
             <Link
               key={cat.slug}
               href={href}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors",
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-all active:scale-95",
                 isActive
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background hover:bg-muted"
+                  ? "border-transparent bg-gradient-to-br from-primary to-[hsl(var(--rose))] text-white shadow-[0_8px_24px_-10px_hsl(var(--primary))]"
+                  : "border-white/10 bg-white/[.04] text-muted-foreground hover:bg-white/[.09] hover:text-foreground"
               )}
             >
               {cat.name}
@@ -123,7 +152,7 @@ export default async function ListingsPage({
             <p className="col-span-full text-sm text-muted-foreground">
               {activeSlug
                 ? `No listings in ${activeCategory?.name ?? activeSlug} match${query ? ` "${query}"` : ""}.`
-                : `No listings match "${query}".`}
+                : `No listings match your filters.`}
             </p>
           )}
         </div>
