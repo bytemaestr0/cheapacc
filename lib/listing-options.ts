@@ -9,17 +9,16 @@ export const TONES: { value: OptionTone; label: string }[] = [
 
 /** Quick-add presets shown in the admin listing form. Tone can still be changed after adding. */
 export const DEFAULT_OPTIONS: ListingOption[] = [
-  { label: "Access to email (auto registered)", tone: "positive" },
-  { label: "Access to email (native)", tone: "positive" },
-  { label: "Last seen on Tuesday", tone: "positive" },
-  { label: "Full access", tone: "positive" },
-  { label: "Limited", tone: "negative" },
-  { label: "No email access", tone: "negative" },
-  { label: "Europe", tone: "info" },
+  { label: "Instant delivery", tone: "positive" },
+  { label: "Lifetime access", tone: "positive" },
+  { label: "Updates included", tone: "positive" },
+  { label: "Support included", tone: "positive" },
+  { label: "Limited stock", tone: "negative" },
+  { label: "No refunds", tone: "negative" },
+  { label: "Digital download", tone: "info" },
   { label: "Standard", tone: "info" },
-  { label: "Alpha (2×2)", tone: "info" },
-  { label: "1 lvl", tone: "info" },
-  { label: "SDA", tone: "info" },
+  { label: "Worldwide", tone: "info" },
+  { label: "English", tone: "info" },
 ];
 
 export function parseOptions(value: unknown): ListingOption[] {

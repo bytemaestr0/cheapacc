@@ -51,7 +51,7 @@ export function AuthorCard({ author }: { author: DisplayAuthor }) {
       <AuthorAvatar author={author} className="h-14 w-14" />
       <div className="min-w-0 flex-1 space-y-2">
         <div>
-          <p className="text-xs text-muted-foreground">Sold by</p>
+          <p className="text-xs text-muted-foreground">Listed by</p>
           <p className="font-display text-lg font-bold leading-tight">{author.name}</p>
         </div>
         <AuthorTags tags={author.tags} />

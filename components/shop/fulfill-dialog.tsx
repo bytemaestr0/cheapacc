@@ -18,7 +18,7 @@ import {
 
 export function FulfillDialog({ orderId }: { orderId: string }) {
   const [open, setOpen] = useState(false);
-  const [label, setLabel] = useState("Login credentials");
+  const [label, setLabel] = useState("Delivery details");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();

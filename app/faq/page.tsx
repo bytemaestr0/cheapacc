@@ -15,7 +15,7 @@ const faqs: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
-    q: "Where do I get my account data?",
+    q: "Where do I get my order?",
     a: (
       <>
         It is sent to your email and is also available on your{" "}
@@ -24,10 +24,10 @@ const faqs: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
-    q: "What if the account details don't work?",
+    q: "What if the details I received don't work?",
     a: (
       <>
-        Send us proof and you are guaranteed a new account after 1 hour. See the{" "}
+        Send us proof and you are guaranteed a replacement after 1 hour. See the{" "}
         <Link href="/terms" className={link}>Rules & Guarantee</Link> for the full details, including refunds.
       </>
     ),

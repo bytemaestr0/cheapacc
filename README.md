@@ -1,4 +1,4 @@
-# accountstore — digital goods storefront template
+# lmarketz — digital marketplace
 
 Next.js (App Router) + Supabase + Tailwind + shadcn/ui.
 

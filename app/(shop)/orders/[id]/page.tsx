@@ -86,7 +86,7 @@ export default async function OrderDetailPage({
         {order.status === "pending" && (
           <p className="mt-6 text-sm text-muted-foreground">
             We&apos;ve received your order and our team will review and fulfill it shortly.
-            You&apos;ll see credentials appear here once it&apos;s ready.
+            You&apos;ll see your delivery details appear here once it&apos;s ready.
           </p>
         )}
       </FadeIn>

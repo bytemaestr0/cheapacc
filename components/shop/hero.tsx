@@ -12,7 +12,7 @@ const WORDS = ["Digital", "goods,", "delivered", "securely."];
 
 const PERKS = [
   { icon: ShieldCheck, text: "Secure checkout" },
-  { icon: BadgeCheck, text: "Manual fulfillment review" },
+  { icon: BadgeCheck, text: "Verified authors" },
   { icon: Zap, text: "Fast delivery" },
 ];
 
@@ -71,7 +71,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.7, ease }}
           className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg"
         >
-          Browse game accounts and access credentials, pay through a secure checkout, and get every order reviewed by hand before it is fulfilled.
+          A digital marketplace where independent authors publish their listings. Find what you need, check out securely, and get your order delivered fast.
         </motion.p>
 
         <motion.form
@@ -82,7 +82,7 @@ export function Hero() {
           <Search className="ml-3 h-5 w-5 shrink-0 text-muted-foreground transition-colors group-focus-within:text-primary" />
           <input
             value={q} onChange={(e) => setQ(e.target.value)}
-            placeholder="Search Steam, Valorant, Minecraft…"
+            placeholder="Search listings, authors, categories…"
             aria-label="Search listings"
             className="min-w-0 flex-1 bg-transparent py-2.5 text-base outline-none placeholder:text-muted-foreground"
           />

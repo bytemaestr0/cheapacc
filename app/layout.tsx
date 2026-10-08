@@ -12,11 +12,11 @@ const sans = Manrope({ subsets: ["latin"], variable: "--font-sans", display: "sw
 
 export const metadata: Metadata = {
   title: {
-    default: "accountstore — digital goods, delivered securely",
-    template: "%s — accountstore",
+    default: "lmarketz — a digital marketplace",
+    template: "%s — lmarketz",
   },
   description:
-    "Browse and buy digital goods and access credentials with secure checkout and manual fulfillment review.",
+    "A digital marketplace where authors publish listings. Browse, buy with secure checkout, and get your order delivered fast.",
 };
 
 export const viewport: Viewport = { themeColor: "#0b0914", width: "device-width", initialScale: 1 };

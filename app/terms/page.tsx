@@ -9,7 +9,7 @@ const sections = [
     title: "Refunds",
     items: [
       "Refund requests must be made within 30 days of your purchase.",
-      "To get a refund, send proof that the account data was not valid (for example a screenshot or screen recording of the failed login).",
+      "To get a refund, send proof that the delivered details were not valid (for example a screenshot or screen recording of the error).",
       "Every request is reviewed and answered within 3 business days at most.",
       "A refund is only issued once the proof has been accepted.",
     ],
@@ -18,18 +18,18 @@ const sections = [
     icon: ShieldCheck,
     title: "Replacement guarantee",
     items: [
-      "If the account details you received are not correct, you are guaranteed a new account after 1 hour.",
+      "If the details you received are not correct, you are guaranteed a replacement after 1 hour.",
       "Send your proof of the problem together with your order ID so we can verify it quickly.",
-      "A replacement is the same type of account, or the closest equivalent if the original is no longer available.",
+      "A replacement is the same item, or the closest equivalent if the original is no longer available.",
     ],
   },
   {
     icon: KeyRound,
     title: "After delivery",
     items: [
-      "Once the details have been delivered and work as described, the order is complete.",
-      "We are not responsible for problems that happen after delivery, such as the password or email being changed by the account's original owner or by anyone else.",
-      "Change the password and secure the account as soon as you receive it.",
+      "Once your order has been delivered and works as described, it is complete.",
+      "We are not responsible for problems that happen after delivery, such as login details being changed by the original owner or by anyone else.",
+      "Secure what you receive (for example by changing any passwords) as soon as it arrives.",
     ],
   },
   {
