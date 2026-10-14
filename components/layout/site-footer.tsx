@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
 
 const links = [
   { href: "/terms", label: "Rules & Guarantee" },
@@ -15,7 +14,8 @@ export function SiteFooter() {
       <div className="mx-auto flex max-w-[1280px] flex-col gap-8 px-6 py-12 md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
           <Link href="/" className="inline-flex items-center gap-2 font-display text-lg font-bold">
-            <ShoppingBag className="h-5 w-5 text-primary" /> <span className="text-gradient">l</span>marketz
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-mark.svg" alt="" className="h-7 w-7" /><span className="text-gradient">l</span>marketz
           </Link>
           <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} lmarketz. All rights reserved.</p>
         </div>

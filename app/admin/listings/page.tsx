@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ListingActions } from "@/components/shop/listing-actions";
 import { CategoryBadge } from "@/components/shop/category-badge";
 import { formatPrice } from "@/lib/utils";
 
@@ -13,6 +14,11 @@ export default async function AdminListingsPage() {
     .from("listings")
     .select("id, title, price_cents, currency, stock_count, status, categories(name, image_url)")
     .order("created_at", { ascending: false });
+
+  // How many order lines reference each listing (decides whether it can be deleted).
+  const { data: orderLines } = await supabase.from("order_items").select("listing_id");
+  const orderCounts = new Map<string, number>();
+  for (const l of orderLines ?? []) orderCounts.set(l.listing_id, (orderCounts.get(l.listing_id) ?? 0) + 1);
 
   return (
     <div>
@@ -26,7 +32,7 @@ export default async function AdminListingsPage() {
         </Button>
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border">
+      <div className="overflow-x-auto rounded-2xl border border-border">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
             <tr>
@@ -52,10 +58,11 @@ export default async function AdminListingsPage() {
                     {listing.status}
                   </Badge>
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="whitespace-nowrap px-4 py-3 text-right">
                   <Button variant="ghost" size="sm" asChild>
                     <Link href={`/admin/listings/${listing.id}`}>Edit</Link>
                   </Button>
+                  <ListingActions id={listing.id} title={listing.title} status={listing.status} orderCount={orderCounts.get(listing.id) ?? 0} />
                 </td>
               </tr>
             ))}

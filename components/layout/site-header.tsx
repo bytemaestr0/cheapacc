@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useScroll, useSpring } from "framer-motion";
 import {
-  ShoppingCart, User, Receipt, ShoppingBag, Search, ShieldCheck, FileText, CircleHelp, Flag, Store, ChevronRight,
+  ShoppingCart, User, Receipt, Search, ShieldCheck, FileText, CircleHelp, Flag, Store, ChevronRight,
 } from "lucide-react";
 import { useCart } from "@/components/shop/cart-provider";
 import { cn } from "@/lib/utils";
@@ -92,9 +92,8 @@ export function SiteHeader() {
       />
       <div className={cn("mx-auto flex max-w-[1280px] items-center gap-3 px-4 transition-all duration-500 sm:px-6", scrolled ? "h-14" : "h-[68px]")}>
         <Link href="/" className="group flex shrink-0 items-center gap-2.5" aria-label="lmarketz home">
-          <span className="relative grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--rose))] shadow-[0_8px_24px_-8px_hsl(var(--primary))] transition-transform duration-500 group-hover:rotate-[14deg] group-hover:scale-110">
-            <ShoppingBag className="h-[18px] w-[18px] text-white" />
-          </span>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-mark.svg" alt="" className="h-9 w-9 transition-transform duration-500 group-hover:rotate-[10deg] group-hover:scale-110" />
           <span className="font-display text-lg font-bold tracking-tight">
             <span className="text-gradient">l</span>marketz
           </span>
